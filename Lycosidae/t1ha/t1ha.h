@@ -170,6 +170,7 @@
 #define T1HA_VERSION_MAJOR 2
 #define T1HA_VERSION_MINOR 1
 #define T1HA_VERSION_RELEASE 1
+#define t1ha_IMPORTS
 
 #ifndef __has_attribute
 #define __has_attribute(x) (0)
@@ -635,7 +636,7 @@ T1HA_API uint64_t t1ha0(const void *data, size_t length, uint64_t seed);
 /* Otherwise function pointer will be used.
  * Unfortunately this may cause some overhead calling. */
 T1HA_API extern uint64_t (*t1ha0_funcptr)(const void *data, size_t length,
-                                          uint64_t seed);
+    uint64_t seed);
 static __force_inline uint64_t t1ha0(const void *data, size_t length,
                                      uint64_t seed) {
   return t1ha0_funcptr(data, length, seed);

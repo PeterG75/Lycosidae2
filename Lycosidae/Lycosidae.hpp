@@ -13,6 +13,7 @@
 #include <xstring>
 #include <cassert>
 
+
 BOOL check_remote_debugger_present_api()
 {
   auto b_is_dbg_present = FALSE;

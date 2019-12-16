@@ -83,5 +83,8 @@
     <ClInclude Include="Additional.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Lib.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

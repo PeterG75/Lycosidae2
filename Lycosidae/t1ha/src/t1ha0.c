@@ -46,7 +46,7 @@
 #include "t1ha_selfcheck.h"
 
 static __maybe_unused __always_inline uint32_t tail32_le_aligned(const void *v,
-                                                                 size_t tail) {
+    size_t tail) {
   const uint8_t *const p = (const uint8_t *)v;
 #if T1HA_USE_FAST_ONESHOT_READ && !defined(__SANITIZE_ADDRESS__)
   /* We can perform a 'oneshot' read, which is little bit faster. */
@@ -55,36 +55,36 @@ static __maybe_unused __always_inline uint32_t tail32_le_aligned(const void *v,
 #else
   uint32_t r = 0;
   switch (tail & 3) {
-  default:
-    unreachable();
-/* fall through */
+    default:
+      unreachable();
+      /* fall through */
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-  /* For most CPUs this code is better when not needed
-   * copying for alignment or byte reordering. */
-  case 0:
-    return fetch32_le_aligned(p);
-  case 3:
-    r = (uint32_t)p[2] << 16;
-  /* fall through */
-  case 2:
-    return r + fetch16_le_aligned(p);
-  case 1:
-    return p[0];
+    /* For most CPUs this code is better when not needed
+     * copying for alignment or byte reordering. */
+    case 0:
+      return fetch32_le_aligned(p);
+    case 3:
+      r = (uint32_t)p[2] << 16;
+    /* fall through */
+    case 2:
+      return r + fetch16_le_aligned(p);
+    case 1:
+      return p[0];
 #else
-  case 0:
-    r += p[3];
-    r <<= 8;
-  /* fall through */
-  case 3:
-    r += p[2];
-    r <<= 8;
-  /* fall through */
-  case 2:
-    r += p[1];
-    r <<= 8;
-  /* fall through */
-  case 1:
-    return r + p[0];
+    case 0:
+      r += p[3];
+      r <<= 8;
+    /* fall through */
+    case 3:
+      r += p[2];
+      r <<= 8;
+    /* fall through */
+    case 2:
+      r += p[1];
+      r <<= 8;
+    /* fall through */
+    case 1:
+      return r + p[0];
 #endif
   }
 #endif /* T1HA_USE_FAST_ONESHOT_READ */
@@ -107,46 +107,46 @@ tail32_le_unaligned(const void *v, size_t tail) {
 #else
   uint32_t r = 0;
   switch (tail & 3) {
-  default:
-    unreachable();
-/* fall through */
+    default:
+      unreachable();
+      /* fall through */
 #if T1HA_SYS_UNALIGNED_ACCESS == T1HA_UNALIGNED_ACCESS__EFFICIENT &&           \
     __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-  /* For most CPUs this code is better when not needed
-   * copying for alignment or byte reordering. */
-  case 0:
-    return fetch32_le_unaligned(p);
-  case 3:
-    r = (uint32_t)p[2] << 16;
-  /* fall through */
-  case 2:
-    return r + fetch16_le_unaligned(p);
-  case 1:
-    return p[0];
+    /* For most CPUs this code is better when not needed
+     * copying for alignment or byte reordering. */
+    case 0:
+      return fetch32_le_unaligned(p);
+    case 3:
+      r = (uint32_t)p[2] << 16;
+    /* fall through */
+    case 2:
+      return r + fetch16_le_unaligned(p);
+    case 1:
+      return p[0];
 #else
-  /* For most CPUs this code is better than a
-   * copying for alignment and/or byte reordering. */
-  case 0:
-    r += p[3];
-    r <<= 8;
-  /* fall through */
-  case 3:
-    r += p[2];
-    r <<= 8;
-  /* fall through */
-  case 2:
-    r += p[1];
-    r <<= 8;
-  /* fall through */
-  case 1:
-    return r + p[0];
+    /* For most CPUs this code is better than a
+     * copying for alignment and/or byte reordering. */
+    case 0:
+      r += p[3];
+      r <<= 8;
+    /* fall through */
+    case 3:
+      r += p[2];
+      r <<= 8;
+    /* fall through */
+    case 2:
+      r += p[1];
+      r <<= 8;
+    /* fall through */
+    case 1:
+      return r + p[0];
 #endif
   }
 #endif /* can_read_underside */
 }
 
 static __maybe_unused __always_inline uint32_t tail32_be_aligned(const void *v,
-                                                                 size_t tail) {
+    size_t tail) {
   const uint8_t *const p = (const uint8_t *)v;
 #if T1HA_USE_FAST_ONESHOT_READ && !defined(__SANITIZE_ADDRESS__)
   /* We can perform a 'oneshot' read, which is little bit faster. */
@@ -154,30 +154,30 @@ static __maybe_unused __always_inline uint32_t tail32_be_aligned(const void *v,
   return fetch32_be_aligned(p) >> shift;
 #else
   switch (tail & 3) {
-  default:
-    unreachable();
-/* fall through */
+    default:
+      unreachable();
+      /* fall through */
 #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-  /* For most CPUs this code is better when not needed
-   * copying for alignment or byte reordering. */
-  case 1:
-    return p[0];
-  case 2:
-    return fetch16_be_aligned(p);
-  case 3:
-    return fetch16_be_aligned(p) << 8 | p[2];
-  case 0:
-    return fetch32_be_aligned(p);
+    /* For most CPUs this code is better when not needed
+     * copying for alignment or byte reordering. */
+    case 1:
+      return p[0];
+    case 2:
+      return fetch16_be_aligned(p);
+    case 3:
+      return fetch16_be_aligned(p) << 8 | p[2];
+    case 0:
+      return fetch32_be_aligned(p);
 #else
-  case 1:
-    return p[0];
-  case 2:
-    return p[1] | (uint32_t)p[0] << 8;
-  case 3:
-    return p[2] | (uint32_t)p[1] << 8 | (uint32_t)p[0] << 16;
-  case 0:
-    return p[3] | (uint32_t)p[2] << 8 | (uint32_t)p[1] << 16 |
-           (uint32_t)p[0] << 24;
+    case 1:
+      return p[0];
+    case 2:
+      return p[1] | (uint32_t)p[0] << 8;
+    case 3:
+      return p[2] | (uint32_t)p[1] << 8 | (uint32_t)p[0] << 16;
+    case 0:
+      return p[3] | (uint32_t)p[2] << 8 | (uint32_t)p[1] << 16 |
+             (uint32_t)p[0] << 24;
 #endif
   }
 #endif /* T1HA_USE_FAST_ONESHOT_READ */
@@ -199,33 +199,33 @@ tail32_be_unaligned(const void *v, size_t tail) {
   return fetch32_be_unaligned(p) >> shift;
 #else
   switch (tail & 3) {
-  default:
-    unreachable();
-/* fall through */
+    default:
+      unreachable();
+      /* fall through */
 #if T1HA_SYS_UNALIGNED_ACCESS == T1HA_UNALIGNED_ACCESS__EFFICIENT &&           \
     __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-  /* For most CPUs this code is better when not needed
-   * copying for alignment or byte reordering. */
-  case 1:
-    return p[0];
-  case 2:
-    return fetch16_be_unaligned(p);
-  case 3:
-    return fetch16_be_unaligned(p) << 8 | p[2];
-  case 0:
-    return fetch32_be_unaligned(p);
+    /* For most CPUs this code is better when not needed
+     * copying for alignment or byte reordering. */
+    case 1:
+      return p[0];
+    case 2:
+      return fetch16_be_unaligned(p);
+    case 3:
+      return fetch16_be_unaligned(p) << 8 | p[2];
+    case 0:
+      return fetch32_be_unaligned(p);
 #else
-  /* For most CPUs this code is better than a
-   * copying for alignment and/or byte reordering. */
-  case 1:
-    return p[0];
-  case 2:
-    return p[1] | (uint32_t)p[0] << 8;
-  case 3:
-    return p[2] | (uint32_t)p[1] << 8 | (uint32_t)p[0] << 16;
-  case 0:
-    return p[3] | (uint32_t)p[2] << 8 | (uint32_t)p[1] << 16 |
-           (uint32_t)p[0] << 24;
+    /* For most CPUs this code is better than a
+     * copying for alignment and/or byte reordering. */
+    case 1:
+      return p[0];
+    case 2:
+      return p[1] | (uint32_t)p[0] << 8;
+    case 3:
+      return p[2] | (uint32_t)p[1] << 8 | (uint32_t)p[0] << 16;
+    case 0:
+      return p[3] | (uint32_t)p[2] << 8 | (uint32_t)p[1] << 16 |
+             (uint32_t)p[0] << 24;
 #endif
   }
 #endif /* can_read_underside */
@@ -326,7 +326,6 @@ static const uint32_t prime32_6 = UINT32_C(0xC4BB3575);
 uint64_t t1ha0_32le(const void *data, size_t len, uint64_t seed) {
   uint32_t a = rot32((uint32_t)len, 17) + (uint32_t)seed;
   uint32_t b = (uint32_t)len ^ (uint32_t)(seed >> 32);
-
 #if T1HA_SYS_UNALIGNED_ACCESS == T1HA_UNALIGNED_ACCESS__EFFICIENT
   T1HA0_BODY(le, unaligned);
 #else
@@ -342,7 +341,6 @@ uint64_t t1ha0_32le(const void *data, size_t len, uint64_t seed) {
 uint64_t t1ha0_32be(const void *data, size_t len, uint64_t seed) {
   uint32_t a = rot32((uint32_t)len, 17) + (uint32_t)seed;
   uint32_t b = (uint32_t)len ^ (uint32_t)(seed >> 32);
-
 #if T1HA_SYS_UNALIGNED_ACCESS == T1HA_UNALIGNED_ACCESS__EFFICIENT
   T1HA0_BODY(be, unaligned);
 #else
@@ -389,17 +387,15 @@ __cold uint64_t t1ha_ia32cpu_features(void) {
 #if T1HA0_RUNTIME_SELECT
 
 __cold t1ha0_function_t t1ha0_resolve(void) {
-
 #if T1HA0_AESNI_AVAILABLE && defined(__ia32__)
   uint64_t features = t1ha_ia32cpu_features();
   if (t1ha_ia32_AESNI_avail(features)) {
     if (t1ha_ia32_AVX_avail(features))
       return t1ha_ia32_AVX2_avail(features) ? t1ha0_ia32aes_avx2
-                                            : t1ha0_ia32aes_avx;
+             : t1ha0_ia32aes_avx;
     return t1ha0_ia32aes_noavx;
   }
 #endif /* T1HA0_AESNI_AVAILABLE && __ia32__ */
-
 #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
 #if (UINTPTR_MAX > 0xffffFFFFul || ULONG_MAX > 0xffffFFFFul) &&                \
     (!defined(T1HA1_DISABLED) || !defined(T1HA2_DISABLED))
@@ -432,7 +428,7 @@ __cold t1ha0_function_t t1ha0_resolve(void) {
  * and https://sourceware.org/glibc/wiki/GNU_IFUNC */
 #if __has_attribute(ifunc)
 uint64_t t1ha0(const void *data, size_t len, uint64_t seed)
-    __attribute__((ifunc("t1ha0_resolve")));
+__attribute__((ifunc("t1ha0_resolve")));
 #else
 __asm("\t.globl\tt1ha0\n\t.type\tt1ha0, "
       "%gnu_indirect_function\n\t.set\tt1ha0,t1ha0_resolve");
