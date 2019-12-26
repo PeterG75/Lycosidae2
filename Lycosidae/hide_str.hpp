@@ -1,6 +1,5 @@
 #pragma once
 #include <array>
-#include <cstdarg>
 #include <random>
 #include "Additional.h"
 

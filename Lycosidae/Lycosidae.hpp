@@ -6,10 +6,7 @@
 #include "api_obfuscation.hpp"
 #include "hide_str.hpp"
 
-#include <iostream>
-#include <libloaderapi.h>
 #include <winternl.h>
-#include <Psapi.h>
 #include <xstring>
 #include <cassert>
 
@@ -76,7 +73,8 @@ BOOL nt_query_object_object_all_types_information()
 		hash_GetModuleHandleW(NTDLL), (LPCSTR)PRINT_HIDE_STR("NtQueryObject")));
 	ULONG size;
 	auto status = nt_query_object(nullptr, 3, &size, sizeof(ULONG), &size);
-	const auto p_memory = hash_VirtualAlloc(nullptr, static_cast<size_t>(size), MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+	const auto p_memory = hash_VirtualAlloc(nullptr, static_cast<size_t>(size), MEM_RESERVE | MEM_COMMIT,
+	                                        PAGE_READWRITE);
 	if (p_memory == nullptr)
 		return FALSE;
 	status = nt_query_object(reinterpret_cast<HANDLE>(-1), 3, p_memory, size, nullptr);
@@ -213,7 +211,7 @@ BOOL NtQuerySystemInformation_SystemKernelDebuggerInformation()
 	const auto NtQuerySystemInformation = reinterpret_cast<t_nt_query_system_information>(hash_GetProcAddress(
 		ntdll, (LPCSTR)PRINT_HIDE_STR("NtQuerySystemInformation")));
 	auto Status = NtQuerySystemInformation(SystemKernelDebuggerInformation, &KdDebuggerInfo,
-	                                           sizeof(SYSTEM_KERNEL_DEBUGGER_INFORMATION), nullptr);
+	                                       sizeof(SYSTEM_KERNEL_DEBUGGER_INFORMATION), nullptr);
 	if (Status >= 0)
 	{
 		if (KdDebuggerInfo.KernelDebuggerEnabled || !KdDebuggerInfo.KernelDebuggerNotPresent)
