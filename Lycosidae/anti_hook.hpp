@@ -24,7 +24,7 @@ void* __teb()
 unsigned int __pid()
 {
 #ifdef _AMD64_
-	return *(unsigned int *)((unsigned char *)__teb() + 0x40);
+	return *(unsigned int *)(static_cast<unsigned char *>(__teb()) + 0x40);
 #else
   return *(unsigned int *)((unsigned char *)__teb() + 0x20);
 #endif
@@ -33,7 +33,7 @@ unsigned int __pid()
 unsigned int __tid()
 {
 #ifdef _AMD64_
-	return *(unsigned int *)((unsigned char *)__teb() + 0x48);
+	return *(unsigned int *)(static_cast<unsigned char *>(__teb()) + 0x48);
 #else
   return *(unsigned int *)((unsigned char *)__teb() + 0x24);
 #endif
@@ -41,9 +41,9 @@ unsigned int __tid()
 
 PVOID Alloc(OPTIONAL PVOID Base, SIZE_T Size, ULONG Protect)
 {
-	NTSTATUS Status = hash_NtAllocateVirtualMemory(hash_GetCurrentProcess(), &Base, Base ? 12 : 0, &Size,
+	auto Status = hash_NtAllocateVirtualMemory(hash_GetCurrentProcess(), &Base, Base ? 12 : 0, &Size,
 	                                               MEM_RESERVE | MEM_COMMIT, Protect);
-	return NT_SUCCESS(Status) ? Base : NULL;
+	return NT_SUCCESS(Status) ? Base : nullptr;
 }
 
 VOID Free(PVOID Base)
@@ -61,9 +61,9 @@ BOOLEAN NTAPI EnumProcesses_(
 )
 {
 	ULONG Length = 0;
-	NTSTATUS Status = hash_NtQuerySystemInformation(SystemProcessInformation, NULL, 0, &Length);
-	if (Status != ((NTSTATUS)0xC0000004L)) return FALSE;
-	PWRK_SYSTEM_PROCESS_INFORMATION Info = (PWRK_SYSTEM_PROCESS_INFORMATION)Alloc(NULL, Length, PAGE_READWRITE);
+	auto Status = hash_NtQuerySystemInformation(SystemProcessInformation, nullptr, 0, &Length);
+	if (Status != static_cast<NTSTATUS>(0xC0000004L)) return FALSE;
+	auto Info = static_cast<PWRK_SYSTEM_PROCESS_INFORMATION>(Alloc(nullptr, Length, PAGE_READWRITE));
 	if (!Info) return FALSE;
 	Status = hash_NtQuerySystemInformation(SystemProcessInformation, Info, Length, &Length);
 	if (!NT_SUCCESS(Status))
@@ -84,14 +84,14 @@ BOOLEAN NTAPI EnumProcesses_(
 BOOLEAN SuspendResumeCallback(PWRK_SYSTEM_PROCESS_INFORMATION Process, PVOID Arg)
 {
 	if (!Process || !Arg) return FALSE;
-	PSUSPEND_RESUME_INFO Info = (PSUSPEND_RESUME_INFO)Arg;
-	if ((SIZE_T)Process->UniqueProcessId != (SIZE_T)Info->CurrentPid) return TRUE;
+	auto Info = static_cast<PSUSPEND_RESUME_INFO>(Arg);
+	if ((SIZE_T)Process->UniqueProcessId != static_cast<SIZE_T>(Info->CurrentPid)) return TRUE;
 	// Continue the processes enumeration loop
 	for (unsigned int i = 0; i < Process->NumberOfThreads; ++i)
 	{
-		if ((SIZE_T)Process->Threads[i].ClientId.UniqueThread == (SIZE_T)Info->CurrentTid) continue;
-		HANDLE hThread = NULL;
-		NTSTATUS Status = hash_NtOpenThread(&hThread, THREAD_SUSPEND_RESUME, NULL,
+		if ((SIZE_T)Process->Threads[i].ClientId.UniqueThread == static_cast<SIZE_T>(Info->CurrentTid)) continue;
+		HANDLE hThread = nullptr;
+		auto Status = hash_NtOpenThread(&hThread, THREAD_SUSPEND_RESUME, nullptr,
 		                                    (PCLIENT_ID)&Process->Threads[i].ClientId);
 		if (NT_SUCCESS(Status) && hThread)
 		{
@@ -131,7 +131,7 @@ BOOLEAN ResumeThreads()
 
 DWORD GetModuleName(const HMODULE hModule, LPSTR szModuleName, const DWORD nSize)
 {
-	DWORD dwLength = hash_GetModuleFileNameExA(
+	auto dwLength = hash_GetModuleFileNameExA(
 		hash_GetCurrentProcess(), // Process handle.
 		hModule, // Module handle.
 		szModuleName, // Pointer to buffer to receive file name.
@@ -151,7 +151,7 @@ DWORD GetModuleName(const HMODULE hModule, LPSTR szModuleName, const DWORD nSize
 DWORD ProtectMemory(const LPVOID lpAddress, const SIZE_T nSize, const DWORD flNewProtect)
 {
 	DWORD flOldProtect = 0;
-	BOOL bRet = hash_VirtualProtect(
+	auto bRet = hash_VirtualProtect(
 		lpAddress, // Base address to protect.
 		nSize, // Size to protect.
 		flNewProtect, // Desired protection.
@@ -167,18 +167,17 @@ DWORD ProtectMemory(const LPVOID lpAddress, const SIZE_T nSize, const DWORD flNe
 DWORD ReplaceExecSection(const HMODULE hModule, const LPVOID lpMapping)
 {
 	// Parse the PE headers.
-	PIMAGE_DOS_HEADER pidh = (PIMAGE_DOS_HEADER)lpMapping;
-	PIMAGE_NT_HEADERS pinh = (PIMAGE_NT_HEADERS)((DWORD_PTR)lpMapping + pidh->e_lfanew);
+	auto pidh = static_cast<PIMAGE_DOS_HEADER>(lpMapping);
+	auto pinh = (PIMAGE_NT_HEADERS)((DWORD_PTR)lpMapping + pidh->e_lfanew);
 	// Walk the section headers and find the .text section.
 	for (WORD i = 0; i < pinh->FileHeader.NumberOfSections; i++)
 	{
-		PIMAGE_SECTION_HEADER pish = (PIMAGE_SECTION_HEADER)((DWORD_PTR)IMAGE_FIRST_SECTION(pinh) + ((DWORD_PTR)
-			IMAGE_SIZEOF_SECTION_HEADER * i));
+		auto pish = (PIMAGE_SECTION_HEADER)((DWORD_PTR)IMAGE_FIRST_SECTION(pinh) + (static_cast<DWORD_PTR>(IMAGE_SIZEOF_SECTION_HEADER) * i));
 		if (!str_cmp_char((const char *)pish->Name, (LPCSTR)PRINT_HIDE_STR(".text")))
 		{
 			// Deprotect the module's memory region for write permissions.
-			DWORD flProtect = ProtectMemory(
-				(LPVOID)((DWORD_PTR)hModule + (DWORD_PTR)pish->VirtualAddress), // Address to protect.
+			auto flProtect = ProtectMemory(
+				(LPVOID)((DWORD_PTR)hModule + static_cast<DWORD_PTR>(pish->VirtualAddress)), // Address to protect.
 				pish->Misc.VirtualSize, // Size to protect.
 				PAGE_EXECUTE_READWRITE // Desired protection.
 			);
@@ -189,13 +188,13 @@ DWORD ReplaceExecSection(const HMODULE hModule, const LPVOID lpMapping)
 			}
 			// Replace the hooked module's .text section with the newly mapped module's.
 			copy_memory(
-				(LPVOID)((DWORD_PTR)hModule + (DWORD_PTR)pish->VirtualAddress),
-				(LPVOID)((DWORD_PTR)lpMapping + (DWORD_PTR)pish->VirtualAddress),
+				(LPVOID)((DWORD_PTR)hModule + static_cast<DWORD_PTR>(pish->VirtualAddress)),
+				(LPVOID)((DWORD_PTR)lpMapping + static_cast<DWORD_PTR>(pish->VirtualAddress)),
 				pish->Misc.VirtualSize
 			);
 			// Reprotect the module's memory region.
 			flProtect = ProtectMemory(
-				(LPVOID)((DWORD_PTR)hModule + (DWORD_PTR)pish->VirtualAddress), // Address to protect.
+				(LPVOID)((DWORD_PTR)hModule + static_cast<DWORD_PTR>(pish->VirtualAddress)), // Address to protect.
 				pish->Misc.VirtualSize, // Size to protect.
 				flProtect // Revert to old protection.
 			);
@@ -216,7 +215,7 @@ DWORD UnhookModule(const HMODULE hModule)
 	CHAR szModuleName[MAX_PATH];
 	ZeroMemory(szModuleName, sizeof(szModuleName));
 	// Get the full path of the module.
-	DWORD dwRet = GetModuleName(
+	auto dwRet = GetModuleName(
 		hModule,
 		szModuleName,
 		sizeof(szModuleName)
@@ -227,14 +226,14 @@ DWORD UnhookModule(const HMODULE hModule)
 		return dwRet;
 	}
 	// Get a handle to the module's file.
-	HANDLE hFile = hash_CreateFileA(
+	auto hFile = hash_CreateFileA(
 		szModuleName, // Module path name.
 		GENERIC_READ, // Desired access.
 		FILE_SHARE_READ, // Share access.
-		NULL, // Security attributes.
+		nullptr, // Security attributes.
 		OPEN_EXISTING, // Creation disposition.
 		0, // Attributes.
-		NULL // Template file handle.
+		nullptr // Template file handle.
 	);
 	if (hFile == INVALID_HANDLE_VALUE)
 	{
@@ -242,13 +241,13 @@ DWORD UnhookModule(const HMODULE hModule)
 		return ERR_CREATE_FILE_FAILED;
 	}
 	// Create a mapping object for the module.
-	HANDLE hFileMapping = hash_CreateFileMappingW(
+	auto hFileMapping = hash_CreateFileMappingW(
 		hFile, // Handle to file.
-		NULL, // Mapping attributes.
+		nullptr, // Mapping attributes.
 		PAGE_READONLY | SEC_IMAGE, // Page protection.
 		0, // Maximum size high DWORD.
 		0, // Maximum size low DWORD.
-		NULL // Name of mapping object.
+		nullptr // Name of mapping object.
 	);
 	if (!hFileMapping)
 	{
@@ -265,7 +264,7 @@ DWORD UnhookModule(const HMODULE hModule)
 		return ERR_CREATE_FILE_MAPPING_ALREADY_EXISTS;
 	}
 	// Map the module.
-	LPVOID lpMapping = hash_MapViewOfFile(
+	auto lpMapping = hash_MapViewOfFile(
 		hFileMapping, // Handle of mapping object.
 		FILE_MAP_READ, // Desired access.
 		0, // File offset high DWORD.
@@ -287,7 +286,7 @@ DWORD UnhookModule(const HMODULE hModule)
 		hModule, // Handle to the hooked module.
 		lpMapping // Pointer to the newly mapped module.
 	);
-	hash_NtFlushInstructionCache(hash_GetCurrentProcess(), NULL, 0);
+	hash_NtFlushInstructionCache(hash_GetCurrentProcess(), nullptr, 0);
 	ResumeThreads();
 	if (dwRet)
 	{
@@ -307,7 +306,7 @@ DWORD UnhookModule(const HMODULE hModule)
 
 HMODULE AddModule(const char* lpLibName)
 {
-	HMODULE hModule = hash_GetModuleHandleA(lpLibName);
+	auto hModule = hash_GetModuleHandleA(lpLibName);
 	if (!hModule)
 	{
 		hModule = hash_LoadLibraryA(lpLibName);
@@ -317,8 +316,8 @@ HMODULE AddModule(const char* lpLibName)
 
 DWORD Unhook(const char* lpLibName)
 {
-	HMODULE hModule = AddModule(lpLibName);
-	DWORD hMod = UnhookModule(hModule);
+	auto hModule = AddModule(lpLibName);
+	auto hMod = UnhookModule(hModule);
 	// free lib
 	if (hMod)
 	{

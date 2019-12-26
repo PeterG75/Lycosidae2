@@ -76,7 +76,7 @@ BOOL nt_query_object_object_all_types_information()
 		hash_GetModuleHandleW(NTDLL), (LPCSTR)PRINT_HIDE_STR("NtQueryObject")));
 	ULONG size;
 	auto status = nt_query_object(nullptr, 3, &size, sizeof(ULONG), &size);
-	const auto p_memory = hash_VirtualAlloc(nullptr, (size_t)size, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+	const auto p_memory = hash_VirtualAlloc(nullptr, static_cast<size_t>(size), MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
 	if (p_memory == nullptr)
 		return FALSE;
 	status = nt_query_object(reinterpret_cast<HANDLE>(-1), 3, p_memory, size, nullptr);
@@ -91,8 +91,8 @@ BOOL nt_query_object_object_all_types_information()
 	for (UINT i = 0; i < num_objects; i++)
 	{
 		const auto pObjectTypeInfo = reinterpret_cast<pobject_type_information>(p_obj_info_location);
-		if (str_cmp_wchar((const wchar_t *)(char_to_wchar((LPCSTR)PRINT_HIDE_STR("DebugObject"))),
-		                  (const wchar_t *)(pObjectTypeInfo->type_name.Buffer)) == 0)
+		if (str_cmp_wchar(static_cast<const wchar_t *>(char_to_wchar((LPCSTR)PRINT_HIDE_STR("DebugObject"))),
+		                  static_cast<const wchar_t *>(pObjectTypeInfo->type_name.Buffer)) == 0)
 		{
 			if (pObjectTypeInfo->total_number_of_objects > 0)
 			{
@@ -207,13 +207,13 @@ BOOL titan_hide_check()
 
 BOOL NtQuerySystemInformation_SystemKernelDebuggerInformation()
 {
-	const int SystemKernelDebuggerInformation = 0x23;
+	const auto SystemKernelDebuggerInformation = 0x23;
 	SYSTEM_KERNEL_DEBUGGER_INFORMATION KdDebuggerInfo;
 	const auto ntdll = hash_GetModuleHandleW(NTDLL);
 	const auto NtQuerySystemInformation = reinterpret_cast<t_nt_query_system_information>(hash_GetProcAddress(
 		ntdll, (LPCSTR)PRINT_HIDE_STR("NtQuerySystemInformation")));
-	NTSTATUS Status = NtQuerySystemInformation(SystemKernelDebuggerInformation, &KdDebuggerInfo,
-	                                           sizeof(SYSTEM_KERNEL_DEBUGGER_INFORMATION), NULL);
+	auto Status = NtQuerySystemInformation(SystemKernelDebuggerInformation, &KdDebuggerInfo,
+	                                           sizeof(SYSTEM_KERNEL_DEBUGGER_INFORMATION), nullptr);
 	if (Status >= 0)
 	{
 		if (KdDebuggerInfo.KernelDebuggerEnabled || !KdDebuggerInfo.KernelDebuggerNotPresent)
@@ -225,7 +225,7 @@ BOOL NtQuerySystemInformation_SystemKernelDebuggerInformation()
 BOOL SharedUserData_KernelDebugger()
 {
 	const ULONG_PTR UserSharedData = 0x7FFE0000;
-	const UCHAR KdDebuggerEnabledByte = *(UCHAR *)(UserSharedData + 0x2D4);
+	const auto KdDebuggerEnabledByte = *(UCHAR *)(UserSharedData + 0x2D4);
 	const BOOLEAN KdDebuggerEnabled = (KdDebuggerEnabledByte & 0x1) == 0x1;
 	const BOOLEAN KdDebuggerNotPresent = (KdDebuggerEnabledByte & 0x2) == 0;
 	if (KdDebuggerEnabled || !KdDebuggerNotPresent)

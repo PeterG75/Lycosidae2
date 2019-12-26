@@ -30,9 +30,9 @@ static int hash_lstrcmpiW(LPCWSTR lpString1,
 
 HMODULE kernel32Handle(void)
 {
-	HMODULE dwResult = NULL;
-	PEB_c* lpPEB = NULL;
-	SIZE_T* lpFirstModule = NULL;
+	HMODULE dwResult = nullptr;
+	PEB_c* lpPEB = nullptr;
+	SIZE_T* lpFirstModule = nullptr;
 #if defined _WIN64
 	lpPEB = *(PEB_c **)(__readgsqword(0x30) + 0x60); //get a pointer to the PEB
 #else
@@ -42,15 +42,15 @@ HMODULE kernel32Handle(void)
 	// PEB->Ldr = 0x0C
 	// Ldr->LdrInMemoryOrderModuleList = 0x14
 	lpFirstModule = (SIZE_T *)lpPEB->Ldr->InMemoryOrderModuleList;
-	SIZE_T* lpCurrModule = lpFirstModule;
+	auto lpCurrModule = lpFirstModule;
 	do
 	{
-		PWCHAR szwModuleName = (PWCHAR)lpCurrModule[10]; // 0x28 - module name in unicode
+		auto szwModuleName = (PWCHAR)lpCurrModule[10]; // 0x28 - module name in unicode
 		DWORD i = 0;
 		DWORD dwHash = 0;
 		while (szwModuleName[i])
 		{
-			BYTE zByte = (BYTE)szwModuleName[i];
+			auto zByte = static_cast<BYTE>(szwModuleName[i]);
 			if (zByte >= 'a' && zByte <= 'z')
 				zByte -= 0x20; // Uppercase
 			dwHash = ROR(dwHash, 13) + zByte;
@@ -86,7 +86,7 @@ LPVOID parse_export_table(HMODULE module, uint64_t api_hash, uint64_t len, const
 	for (i = 0; i < in_export->NumberOfNames - 1; i++)
 	{
 		api_name = (PCHAR)((DWORD_PTR)img_dos_header + rva_name[i]);
-		const uint64_t get_hash = t1ha0(api_name, len, seed);
+		const auto get_hash = t1ha0(api_name, len, seed);
 		if (api_hash == get_hash)
 		{
 			ord = static_cast<UINT>(rva_ordinal[i]);
@@ -117,7 +117,7 @@ LPVOID get_api(uint64_t api_hash, LPCSTR module, uint64_t len, const uint64_t se
 	const auto mlink = *(INT_PTR *)(mdllist + ModuleListFlink);
 	auto krnbase = *(INT_PTR *)(mlink + KernelBaseAddr);
 	auto mdl = (LDR_MODULE *)mlink;
-	HMODULE hKernel32 = NULL;
+	HMODULE hKernel32 = nullptr;
 	hKernel32 = kernel32Handle();
 	do
 	{
@@ -132,8 +132,8 @@ LPVOID get_api(uint64_t api_hash, LPCSTR module, uint64_t len, const uint64_t se
 	}
 	while (mlink != (INT_PTR)mdl);
 	krnl32 = static_cast<HMODULE>(mdl->base);
-	const char* LoadLibraryA_ = (LPCSTR)PRINT_HIDE_STR("LoadLibraryA");
-	const uint64_t api_hash_LoadLibraryA = t1ha0(LoadLibraryA_, strlen(LoadLibraryA_), STRONG_SEED);
+	auto LoadLibraryA_ = (LPCSTR)PRINT_HIDE_STR("LoadLibraryA");
+	const auto api_hash_LoadLibraryA = t1ha0(LoadLibraryA_, strlen(LoadLibraryA_), STRONG_SEED);
 	temp_LoadLibraryA = static_cast<HMODULE(WINAPI *)(LPCSTR)>(parse_export_table(
 		krnl32, api_hash_LoadLibraryA, strlen(LoadLibraryA_), STRONG_SEED));
 	hDll = hash_LoadLibraryA(module);
@@ -620,7 +620,7 @@ BOOL hash_VirtualProtect(LPVOID lpAddress,
                          DWORD flNewProtect,
                          PDWORD lpflOldProtect)
 {
-	const char* func = (LPCSTR)PRINT_HIDE_STR("VirtualProtect");
+	auto func = (LPCSTR)PRINT_HIDE_STR("VirtualProtect");
 	const auto _hash = t1ha0(func, strlen(func), STRONG_SEED);
 	temp_VirtualProtect = static_cast<BOOL(WINAPI *)(LPVOID,
 	                                                 SIZE_T,
@@ -636,7 +636,7 @@ LPVOID hash_VirtualAlloc(LPVOID lpAddress,
                          DWORD flAllocationType,
                          DWORD flProtect)
 {
-	const char* func = (LPCSTR)PRINT_HIDE_STR("VirtualAlloc");
+	auto func = (LPCSTR)PRINT_HIDE_STR("VirtualAlloc");
 	const auto _hash = t1ha0(func, strlen(func), STRONG_SEED);
 	temp_VirtualAlloc = static_cast<LPVOID(WINAPI *)(LPVOID,
 	                                                 SIZE_T,
@@ -651,7 +651,7 @@ BOOL hash_VirtualFree(LPVOID lpAddress,
                       SIZE_T dwSize,
                       DWORD dwFreeType)
 {
-	const char* func = (LPCSTR)PRINT_HIDE_STR("VirtualFree");
+	auto func = (LPCSTR)PRINT_HIDE_STR("VirtualFree");
 	const auto _hash = t1ha0(func, strlen(func), STRONG_SEED);
 	temp_VirtualFree = static_cast<BOOL(WINAPI *)(LPVOID,
 	                                              SIZE_T,
@@ -725,7 +725,7 @@ BOOL hash_GetDiskFreeSpaceExW(LPCWSTR lpDirectoryName,
 
 HMODULE hash_LoadLibraryW(LPCWSTR lpLibFileName)
 {
-	const char* func = (LPCSTR)PRINT_HIDE_STR("LoadLibraryW");
+	auto func = (LPCSTR)PRINT_HIDE_STR("LoadLibraryW");
 	const auto _hash = t1ha0(func, strlen(func), STRONG_SEED);
 	temp_LoadLibraryW = static_cast<HMODULE(WINAPI *)(LPCWSTR)>(get_api(_hash, (LPCSTR)PRINT_HIDE_STR("kernel32.dll"),
 	                                                                    strlen(func),
@@ -773,7 +773,7 @@ HMODULE hash_GetModuleHandleA(LPCSTR lpModuleName)
 
 HMODULE hash_GetModuleHandleW(LPCWSTR lpModuleName)
 {
-	const char* func = (LPCSTR)PRINT_HIDE_STR("GetModuleHandleW");
+	auto func = (LPCSTR)PRINT_HIDE_STR("GetModuleHandleW");
 	const auto _hash = t1ha0(func, strlen(func), STRONG_SEED);
 	temp_GetModuleHandleW = static_cast<HMODULE(WINAPI *)(LPCWSTR)>(get_api(
 		_hash, (LPCSTR)PRINT_HIDE_STR("kernel32.dll"), strlen(func), STRONG_SEED));
@@ -783,7 +783,7 @@ HMODULE hash_GetModuleHandleW(LPCWSTR lpModuleName)
 FARPROC hash_GetProcAddress(HMODULE hModule,
                             LPCSTR lpProcName)
 {
-	const char* func = (LPCSTR)PRINT_HIDE_STR("GetProcAddress");
+	auto func = (LPCSTR)PRINT_HIDE_STR("GetProcAddress");
 	const auto _hash = t1ha0(func, strlen(func), STRONG_SEED);
 	temp_GetProcAddress = static_cast<FARPROC(WINAPI *)(HMODULE,
 	                                                    LPCSTR)>(get_api(_hash, (LPCSTR)PRINT_HIDE_STR("kernel32.dll"),
@@ -997,7 +997,7 @@ HANDLE hash_CreateMutexW(LPSECURITY_ATTRIBUTES lpMutexAttributes,
                          BOOL bInitialOwner,
                          LPCWSTR lpName)
 {
-	const char* func = (LPCSTR)PRINT_HIDE_STR("CreateMutexW");
+	auto func = (LPCSTR)PRINT_HIDE_STR("CreateMutexW");
 	const auto _hash = t1ha0(func, strlen(func), STRONG_SEED);
 	temp_CreateMutexW = static_cast<HANDLE(WINAPI *)(LPSECURITY_ATTRIBUTES,
 	                                                 BOOL,
@@ -1403,7 +1403,7 @@ BOOL hash_IsBadReadPtr(const VOID* lp,
 
 HANDLE hash_GetCurrentProcess()
 {
-	const char* func = (LPCSTR)PRINT_HIDE_STR("GetCurrentProcess");
+	auto func = (LPCSTR)PRINT_HIDE_STR("GetCurrentProcess");
 	const auto _hash = t1ha0(func, strlen(func), STRONG_SEED);
 	temp_GetCurrentProcess = static_cast<HANDLE(WINAPI *)()>(get_api(_hash, (LPCSTR)PRINT_HIDE_STR("kernel32.dll"),
 	                                                                 strlen(func),
@@ -1432,7 +1432,7 @@ void hash_Sleep(DWORD dwMilliseconds)
 
 DWORD hash_GetCurrentProcessId()
 {
-	const char* func = (LPCSTR)PRINT_HIDE_STR("GetCurrentProcessId");
+	auto func = (LPCSTR)PRINT_HIDE_STR("GetCurrentProcessId");
 	const auto _hash = t1ha0(func, strlen(func), STRONG_SEED);
 	temp_GetCurrentProcessId = static_cast<DWORD(WINAPI *)()>(get_api(_hash, (LPCSTR)PRINT_HIDE_STR("kernel32.dll"),
 	                                                                  strlen(func), STRONG_SEED));
@@ -1443,7 +1443,7 @@ HANDLE hash_OpenProcess(DWORD dwDesiredAccess,
                         BOOL bInheritHandle,
                         DWORD dwProcessId)
 {
-	const char* func = (LPCSTR)PRINT_HIDE_STR("OpenProcess");
+	auto func = (LPCSTR)PRINT_HIDE_STR("OpenProcess");
 	const auto _hash = t1ha0(func, strlen(func), STRONG_SEED);
 	temp_OpenProcess = static_cast<HANDLE(WINAPI *)(DWORD,
 	                                                BOOL,
@@ -1629,7 +1629,7 @@ BOOL hash_TerminateProcess(HANDLE hProcess,
 
 BOOL hash_CloseHandle(HANDLE hObject)
 {
-	const char* func = (LPCSTR)PRINT_HIDE_STR("CloseHandle");
+	auto func = (LPCSTR)PRINT_HIDE_STR("CloseHandle");
 	const auto _hash = t1ha0(func, strlen(func), STRONG_SEED);
 	temp_CloseHandle = static_cast<BOOL(WINAPI *)(HANDLE)>(get_api(_hash, (LPCSTR)PRINT_HIDE_STR("kernel32.dll"),
 	                                                               strlen(func),
@@ -1668,7 +1668,7 @@ BOOL hash_SetHandleInformation(HANDLE hObject,
                                DWORD dwMask,
                                DWORD dwFlags)
 {
-	const char* func = (LPCSTR)PRINT_HIDE_STR("SetHandleInformation");
+	auto func = (LPCSTR)PRINT_HIDE_STR("SetHandleInformation");
 	const auto _hash = t1ha0(func, strlen(func), STRONG_SEED);
 	temp_SetHandleInformation = static_cast<BOOL(WINAPI *)(HANDLE,
 	                                                       DWORD,
@@ -1762,7 +1762,7 @@ BOOL hash_DeleteTimerQueueEx(HANDLE TimerQueue,
 BOOL hash_CheckRemoteDebuggerPresent(HANDLE hProcess,
                                      PBOOL pbDebuggerPresent)
 {
-	const char* func = (LPCSTR)PRINT_HIDE_STR("CheckRemoteDebuggerPresent");
+	auto func = (LPCSTR)PRINT_HIDE_STR("CheckRemoteDebuggerPresent");
 	const auto _hash = t1ha0(func, strlen(func), STRONG_SEED);
 	temp_CheckRemoteDebuggerPresent = static_cast<BOOL(WINAPI *)(HANDLE,
 	                                                             PBOOL)>(get_api(
@@ -1901,7 +1901,7 @@ ULONG hash_inet_addr(_In_z_ const char FAR * cp)
 void hash_RtlInitUnicodeString(PUNICODE_STRING DestinationString,
                                PCWSTR SourceString)
 {
-	const char* func = (LPCSTR)PRINT_HIDE_STR("RtlInitUnicodeString");
+	auto func = (LPCSTR)PRINT_HIDE_STR("RtlInitUnicodeString");
 	const auto _hash = t1ha0(func, strlen(func), STRONG_SEED);
 	temp_RtlInitUnicodeString = static_cast<void(*)(PUNICODE_STRING, PCWSTR)>(get_api(
 		_hash, (LPCSTR)PRINT_HIDE_STR("ntdll.dll"), strlen(func), STRONG_SEED));
@@ -1911,7 +1911,7 @@ void hash_RtlInitUnicodeString(PUNICODE_STRING DestinationString,
 
 NTSTATUS hash_NtClose(IN HANDLE Handle)
 {
-	const char* func = (LPCSTR)PRINT_HIDE_STR("NtClose");
+	auto func = (LPCSTR)PRINT_HIDE_STR("NtClose");
 	const auto _hash = t1ha0(func, strlen(func), STRONG_SEED);
 	temp_NtClose = static_cast<NTSTATUS(*)(IN HANDLE)>(get_api(_hash, (LPCSTR)PRINT_HIDE_STR("ntdll.dll"), strlen(func),
 	                                                           STRONG_SEED));
@@ -1920,7 +1920,7 @@ NTSTATUS hash_NtClose(IN HANDLE Handle)
 
 BOOL hash_FreeLibrary(HMODULE hLibModule)
 {
-	const char* func = (LPCSTR)PRINT_HIDE_STR("FreeLibrary");
+	auto func = (LPCSTR)PRINT_HIDE_STR("FreeLibrary");
 	const auto _hash = t1ha0(func, strlen(func), STRONG_SEED);
 	temp_FreeLibrary = static_cast<BOOL(*)(HMODULE)>(get_api(_hash, (LPCSTR)PRINT_HIDE_STR("kernel32.dll"),
 	                                                         strlen(func),
@@ -1930,7 +1930,7 @@ BOOL hash_FreeLibrary(HMODULE hLibModule)
 
 HMODULE hash_LoadLibraryAA(LPCSTR lpLibFileName)
 {
-	const char* func = (LPCSTR)PRINT_HIDE_STR("LoadLibraryA");
+	auto func = (LPCSTR)PRINT_HIDE_STR("LoadLibraryA");
 	const auto _hash = t1ha0(func, strlen(func), STRONG_SEED);
 	temp_LoadLibraryAA = static_cast<HMODULE(*)(LPCSTR)>(get_api(_hash, (LPCSTR)PRINT_HIDE_STR("kernel32.dll"),
 	                                                             strlen(func), STRONG_SEED));
@@ -1943,7 +1943,7 @@ BOOL hash_QueryInformationJobObject(HANDLE hJob,
                                     DWORD cbJobObjectInformationLength,
                                     LPDWORD lpReturnLength)
 {
-	const char* func = (LPCSTR)PRINT_HIDE_STR("QueryInformationJobObject");
+	auto func = (LPCSTR)PRINT_HIDE_STR("QueryInformationJobObject");
 	const auto _hash = t1ha0(func, strlen(func), STRONG_SEED);
 	temp_QueryInformationJobObject = static_cast<BOOL(*)(HANDLE,
 	                                                     JOBOBJECTINFOCLASS,
@@ -1963,7 +1963,7 @@ DWORD hash_K32GetProcessImageFileNameW(HANDLE hProcess,
                                        LPWSTR lpImageFileName,
                                        DWORD nSize)
 {
-	const char* func = (LPCSTR)PRINT_HIDE_STR("K32GetProcessImageFileNameW");
+	auto func = (LPCSTR)PRINT_HIDE_STR("K32GetProcessImageFileNameW");
 	const auto _hash = t1ha0(func, strlen(func), STRONG_SEED);
 	temp_K32GetProcessImageFileNameW = static_cast<DWORD(*)(HANDLE,
 	                                                        LPWSTR,
@@ -1977,7 +1977,7 @@ DWORD hash_K32GetProcessImageFileNameW(HANDLE hProcess,
 
 HANDLE hash_GetCurrentThread()
 {
-	const char* func = (LPCSTR)PRINT_HIDE_STR("GetCurrentThread");
+	auto func = (LPCSTR)PRINT_HIDE_STR("GetCurrentThread");
 	const auto _hash = t1ha0(func, strlen(func), STRONG_SEED);
 	temp_GetCurrentThread = static_cast<HANDLE(*)()>(get_api(_hash, (LPCSTR)PRINT_HIDE_STR("kernel32.dll"),
 	                                                         strlen(func), STRONG_SEED));
@@ -1990,7 +1990,7 @@ LPVOID hash_MapViewOfFile(HANDLE hFileMappingObject,
                           DWORD dwFileOffsetLow,
                           SIZE_T dwNumberOfBytesToMap)
 {
-	const char* func = (LPCSTR)PRINT_HIDE_STR("MapViewOfFile");
+	auto func = (LPCSTR)PRINT_HIDE_STR("MapViewOfFile");
 	const auto _hash = t1ha0(func, strlen(func), STRONG_SEED);
 	temp_MapViewOfFile = static_cast<LPVOID(*)(HANDLE,
 	                                           DWORD,
@@ -2012,7 +2012,7 @@ HANDLE hash_CreateFileMappingW(HANDLE hFile,
                                DWORD dwMaximumSizeLow,
                                LPCWSTR lpName)
 {
-	const char* func = (LPCSTR)PRINT_HIDE_STR("CreateFileMappingW");
+	auto func = (LPCSTR)PRINT_HIDE_STR("CreateFileMappingW");
 	const auto _hash = t1ha0(func, strlen(func), STRONG_SEED);
 	temp_CreateFileMappingW = static_cast<HANDLE(*)(HANDLE,
 	                                                LPSECURITY_ATTRIBUTES,
@@ -2034,7 +2034,7 @@ DWORD hash_GetModuleFileNameExA(HANDLE hProcess,
                                 LPSTR lpFilename,
                                 DWORD nSize)
 {
-	const char* func = (LPCSTR)PRINT_HIDE_STR("K32GetModuleFileNameExA");
+	auto func = (LPCSTR)PRINT_HIDE_STR("K32GetModuleFileNameExA");
 	const auto _hash = t1ha0(func, strlen(func), STRONG_SEED);
 	temp_GetModuleFileNameExA = static_cast<DWORD(*)(HANDLE,
 	                                                 HMODULE,
@@ -2049,7 +2049,7 @@ DWORD hash_GetModuleFileNameExA(HANDLE hProcess,
 
 BOOL hash_UnmapViewOfFile(LPCVOID lpBaseAddress)
 {
-	const char* func = (LPCSTR)PRINT_HIDE_STR("UnmapViewOfFile");
+	auto func = (LPCSTR)PRINT_HIDE_STR("UnmapViewOfFile");
 	const auto _hash = t1ha0(func, strlen(func), STRONG_SEED);
 	temp_UnmapViewOfFile = static_cast<BOOL(*)(LPCVOID)>(get_api(_hash, (LPCSTR)PRINT_HIDE_STR("kernel32.dll"),
 	                                                             strlen(func), STRONG_SEED));
@@ -2061,7 +2061,7 @@ NTSTATUS hash_NtOpenThread(_Out_ PHANDLE ThreadHandle,
                            _In_ POBJECT_ATTRIBUTES ObjectAttributes,
                            _In_ PCLIENT_ID ClientId)
 {
-	const char* func = (LPCSTR)PRINT_HIDE_STR("NtOpenThread");
+	auto func = (LPCSTR)PRINT_HIDE_STR("NtOpenThread");
 	const auto _hash = t1ha0(func, strlen(func), STRONG_SEED);
 	temp_NtOpenThread = static_cast<NTSTATUS(*)(_Out_ PHANDLE,
 	                                            _In_ ACCESS_MASK,
@@ -2078,7 +2078,7 @@ NTSTATUS hash_NtOpenThread(_Out_ PHANDLE ThreadHandle,
 NTSTATUS hash_NtResumeThread(IN HANDLE ThreadHandle,
                              OUT PULONG SuspendCount OPTIONAL)
 {
-	const char* func = (LPCSTR)PRINT_HIDE_STR("NtResumeThread");
+	auto func = (LPCSTR)PRINT_HIDE_STR("NtResumeThread");
 	const auto _hash = t1ha0(func, strlen(func), STRONG_SEED);
 	temp_NtResumeThread = static_cast<NTSTATUS(*)(IN HANDLE,
 	                                              OUT PULONG)>(get_api(_hash, (LPCSTR)PRINT_HIDE_STR("ntdll.dll"),
@@ -2095,7 +2095,7 @@ NTSTATUS hash_NtAllocateVirtualMemory(HANDLE ProcessHandle,
                                       ULONG AllocationType,
                                       ULONG Protect)
 {
-	const char* func = (LPCSTR)PRINT_HIDE_STR("NtAllocateVirtualMemory");
+	auto func = (LPCSTR)PRINT_HIDE_STR("NtAllocateVirtualMemory");
 	const auto _hash = t1ha0(func, strlen(func), STRONG_SEED);
 	temp_NtAllocateVirtualMemory = static_cast<NTSTATUS(*)(HANDLE,
 	                                                       PVOID*,
@@ -2116,7 +2116,7 @@ NTSTATUS hash_NtAllocateVirtualMemory(HANDLE ProcessHandle,
 NTSTATUS hash_NtSuspendThread(IN HANDLE ThreadHandle,
                               OUT PULONG PreviousSuspendCount OPTIONAL)
 {
-	const char* func = (LPCSTR)PRINT_HIDE_STR("NtSuspendThread");
+	auto func = (LPCSTR)PRINT_HIDE_STR("NtSuspendThread");
 	const auto _hash = t1ha0(func, strlen(func), STRONG_SEED);
 	temp_NtSuspendThread = static_cast<NTSTATUS(*)(IN HANDLE,
 	                                               OUT PULONG)>(get_api(_hash, (LPCSTR)PRINT_HIDE_STR("ntdll.dll"),
@@ -2131,7 +2131,7 @@ NTSTATUS hash_NtQuerySystemInformation(IN SYSTEM_INFORMATION_CLASS SystemInforma
                                        IN ULONG SystemInformationLength,
                                        OUT PULONG ReturnLength)
 {
-	const char* func = (LPCSTR)PRINT_HIDE_STR("NtQuerySystemInformation");
+	auto func = (LPCSTR)PRINT_HIDE_STR("NtQuerySystemInformation");
 	const auto _hash = t1ha0(func, strlen(func), STRONG_SEED);
 	temp_NtQuerySystemInformation = static_cast<NTSTATUS(*)(IN SYSTEM_INFORMATION_CLASS,
 	                                                        OUT PVOID,
@@ -2150,7 +2150,7 @@ NTSTATUS hash_NtFreeVirtualMemory(HANDLE ProcessHandle,
                                   PSIZE_T RegionSize,
                                   ULONG FreeType)
 {
-	const char* func = (LPCSTR)PRINT_HIDE_STR("NtFreeVirtualMemory");
+	auto func = (LPCSTR)PRINT_HIDE_STR("NtFreeVirtualMemory");
 	const auto _hash = t1ha0(func, strlen(func), STRONG_SEED);
 	temp_NtFreeVirtualMemory = static_cast<NTSTATUS(*)(HANDLE,
 	                                                   PVOID*,
@@ -2168,7 +2168,7 @@ NTSTATUS hash_NtFlushInstructionCache(IN HANDLE ProcessHandle,
                                       IN PVOID BaseAddress,
                                       IN ULONG NumberOfBytesToFlush)
 {
-	const char* func = (LPCSTR)PRINT_HIDE_STR("NtFlushInstructionCache");
+	auto func = (LPCSTR)PRINT_HIDE_STR("NtFlushInstructionCache");
 	const auto _hash = t1ha0(func, strlen(func), STRONG_SEED);
 	temp_NtFlushInstructionCache = static_cast<NTSTATUS(*)(IN HANDLE,
 	                                                       IN PVOID,

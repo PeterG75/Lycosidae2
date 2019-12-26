@@ -7,10 +7,10 @@
 inline uint32_t Murmur3(const void* key, int len, unsigned int seed)
 {
 	const unsigned int m = 0x5bd1e995;
-	const int r = 24;
+	const auto r = 24;
 	unsigned int l = len;
-	const unsigned char* data = (const unsigned char *)key;
-	unsigned int h = seed;
+	auto data = static_cast<const unsigned char *>(key);
+	auto h = seed;
 	unsigned int k;
 	while (len >= 4)
 	{
@@ -152,7 +152,7 @@ protected:
 	void xtea3_data_crypt(uint8_t* inout, uint32_t len, bool encrypt, const uint32_t* key)
 	{
 		static unsigned char dataArray[BLOCK_SIZE];
-		for (int i = 0; i < len / BLOCK_SIZE; i++)
+		for (auto i = 0; i < len / BLOCK_SIZE; i++)
 		{
 			copy_memory(dataArray, inout, BLOCK_SIZE);
 			if (encrypt)
@@ -169,9 +169,9 @@ protected:
 			uint32_t data[BLOCK_SIZE];
 			copy_memory(data, inout + offset, mod);
 			if (encrypt)
-				xtea3_encipher(32, (uint32_t *)data, key);
+				xtea3_encipher(32, static_cast<uint32_t *>(data), key);
 			else
-				xtea3_decipher(32, (uint32_t *)data, key);
+				xtea3_decipher(32, static_cast<uint32_t *>(data), key);
 			copy_memory(inout + offset, data, mod);
 		}
 	}
@@ -187,7 +187,7 @@ public:
 
 	uint8_t* data_crypt(const uint8_t* data, const uint32_t key[8], uint32_t size)
 	{
-		uint32_t size_crypt_tmp = size;
+		auto size_crypt_tmp = size;
 		DEBUG_PRINT("CRYPT: \n");
 		DEBUG_PRINT("SIZE = %d \n", size);
 		// align to 16
@@ -197,12 +197,12 @@ public:
 		}
 		// Allocate memory for aligned buffer
 		// Plus eight bytes, so that there is the size of the encrypted data and the size of the original data, all this will be stored in the encrypted data
-		data_ptr = NULL;
-		data_ptr = (uint8_t *)malloc(size_crypt_tmp + 8);
-		if (data_ptr == NULL)
+		data_ptr = nullptr;
+		data_ptr = static_cast<uint8_t *>(malloc(size_crypt_tmp + 8));
+		if (data_ptr == nullptr)
 		{
 			DEBUG_PRINT("NO FREE MEM \n");
-			return NULL;
+			return nullptr;
 		}
 		// Put the size of the crypted data and the size of the original in the resulting buffer
 		size_crypt = size_crypt_tmp + 8;
@@ -227,12 +227,12 @@ public:
 		if (size_crypt <= size)
 		{
 			// Allocate memory for decrypted data
-			data_ptr = NULL;
-			data_ptr = (uint8_t *)malloc(size_crypt);
-			if (data_ptr == NULL)
+			data_ptr = nullptr;
+			data_ptr = static_cast<uint8_t *>(malloc(size_crypt));
+			if (data_ptr == nullptr)
 			{
 				DEBUG_PRINT("NO FREE MEM \n");
-				return NULL;
+				return nullptr;
 			}
 			copy_memory(data_ptr, data + 8, size_crypt - 8);
 			// Decrypt data
@@ -241,7 +241,7 @@ public:
 		else
 		{
 			DEBUG_PRINT("size_crypt > size \n");
-			return NULL;
+			return nullptr;
 		}
 		return data_ptr;
 	}
@@ -294,12 +294,12 @@ public:
 		// key for xtea3
 		uint32_t value_for_gen_key = seed;
 		// gen pass for XTEA3
-		for (int i = 0; i < 8; i++)
+		for (auto i = 0; i < 8; i++)
 		{
 			key_for_xtea3[i] = Murmur3(&value_for_gen_key, sizeof(value_for_gen_key), i);
 		}
 		// crypt
-		crypted_str = data_crypt((const uint8_t *)_encrypted.data(), key_for_xtea3, N);
+		crypted_str = data_crypt(static_cast<const uint8_t *>(_encrypted.data()), key_for_xtea3, N);
 	}
 
 	__forceinline uint8_t* decrypt(void)
@@ -307,13 +307,13 @@ public:
 		// key for xtea3
 		uint32_t value_for_gen_key = seed;
 		// gen pass for XTEA3
-		for (int i = 0; i < 8; i++)
+		for (auto i = 0; i < 8; i++)
 		{
 			key_for_xtea3[i] = Murmur3(&value_for_gen_key, sizeof(value_for_gen_key), i);
 		}
 		// decrypt
 		uint8_t* decrypted_str = data_decrypt(crypted_str, key_for_xtea3, this->get_crypt_size());
-		if (decrypted_str == NULL) return NULL;
+		if (decrypted_str == nullptr) return nullptr;
 		for (size_t i = 0; i < N; ++i)
 		{
 			decrypted_str[i] = dec(decrypted_str[i]);

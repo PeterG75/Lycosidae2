@@ -177,10 +177,10 @@ static std::size_t min_add_header(size_t a, size_t b)
 
 static void big_copy(void* dest, const void* src, size_t iterations)
 {
-	long* d = (long *)dest;
-	const long* s = (const long *)src;
-	size_t eight = iterations / 8;
-	size_t single = iterations % 8;
+	auto d = static_cast<long *>(dest);
+	auto s = static_cast<const long *>(src);
+	auto eight = iterations / 8;
+	auto single = iterations % 8;
 	while (eight > 0)
 	{
 		*d++ = *s++;
@@ -202,8 +202,8 @@ static void big_copy(void* dest, const void* src, size_t iterations)
 
 static void small_copy(void* dest, const void* src, size_t iterations)
 {
-	char* d = (char *)dest;
-	const char* s = (const char *)src;
+	auto d = static_cast<char *>(dest);
+	auto s = static_cast<const char *>(src);
 	while (iterations > 0)
 	{
 		*d++ = *s++;
@@ -220,22 +220,22 @@ void* copy_memory(void* dest, const void* src, size_t size)
 		return dest;
 	}
 	//Start copying 8 bytes as soon as one of the pointers is aligned
-	size_t bytes_to_align = min_add_header((size_t)dest % sizeof(long), (size_t)src % sizeof(long));
-	void* position = dest;
+	auto bytes_to_align = min_add_header((size_t)dest % sizeof(long), (size_t)src % sizeof(long));
+	auto position = dest;
 	//Align
 	if (bytes_to_align > 0)
 	{
 		small_copy(position, src, bytes_to_align);
-		position = (char *)position + bytes_to_align;
+		position = static_cast<char *>(position) + bytes_to_align;
 		src = (char *)src + bytes_to_align;
 		size -= bytes_to_align;
 	}
 	//How many iterations can be done
-	size_t safe_big_iterations = size / sizeof(long);
-	size_t remaining_bytes = size % sizeof(long);
+	auto safe_big_iterations = size / sizeof(long);
+	auto remaining_bytes = size % sizeof(long);
 	//Copy most bytes here
 	big_copy(position, src, safe_big_iterations);
-	position = (char *)position + safe_big_iterations * sizeof(long);
+	position = static_cast<char *>(position) + safe_big_iterations * sizeof(long);
 	src = (char *)src + safe_big_iterations * sizeof(long);
 	//Process the remaining bytes
 	small_copy(position, src, remaining_bytes);
@@ -244,7 +244,7 @@ void* copy_memory(void* dest, const void* src, size_t size)
 
 char* __strncpy(char* s, const char* ct, size_t n)
 {
-	char* saver = s;
+	auto saver = s;
 	while (n--)
 		*saver++ = *ct++;
 	*saver = '\0';
@@ -281,8 +281,8 @@ int str_cmp_char(const char* X, const char* Y)
 #pragma warning (disable : 4996)
 const wchar_t* char_to_wchar(const char* c)
 {
-	const size_t cSize = strlen(c) + 1;
-	wchar_t* wc = new wchar_t[cSize];
+	const auto cSize = strlen(c) + 1;
+	auto wc = new wchar_t[cSize];
 	mbstowcs(wc, c, cSize);
 	return wc;
 }
