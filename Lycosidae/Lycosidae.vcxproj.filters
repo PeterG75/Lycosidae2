@@ -53,9 +53,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Lycosidae.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="hide_str.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -83,7 +80,10 @@
     <ClInclude Include="Additional.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Lib.h">
+    <ClInclude Include="lib.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="lycosidae.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

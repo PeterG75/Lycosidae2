@@ -6,7 +6,7 @@
 #include <winnt.h>
 #include <winternl.h>
 
-#include "Additional.h"
+#include "additional.h"
 #include "hide_str.hpp"
 #include "t1ha/t1ha.h"
 

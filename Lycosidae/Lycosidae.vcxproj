@@ -176,12 +176,12 @@
     <ClCompile Include="t1ha\src\t1ha_selfcheck_all.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Additional.h" />
+    <ClInclude Include="additional.h" />
     <ClInclude Include="anti_hook.hpp" />
     <ClInclude Include="api_obfuscation.hpp" />
     <ClInclude Include="hide_str.hpp" />
-    <ClInclude Include="Lib.h" />
-    <ClInclude Include="Lycosidae.hpp" />
+    <ClInclude Include="lib.h" />
+    <ClInclude Include="lycosidae.hpp" />
     <ClInclude Include="t1ha\src\t1ha0_ia32aes_a.h" />
     <ClInclude Include="t1ha\src\t1ha0_ia32aes_b.h" />
     <ClInclude Include="t1ha\src\t1ha_bits.h" />

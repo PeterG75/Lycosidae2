@@ -1,7 +1,7 @@
 //#define LYCOSIDAE_LOG
 //#define ANTIHOOK_LOG
 #include "anti_hook.hpp"
-#include "Lycosidae.hpp"
+#include "lycosidae.hpp"
 
 
 BOOL APIENTRY DllMain(HMODULE hModule,

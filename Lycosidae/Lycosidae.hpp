@@ -2,7 +2,7 @@
 
 #include <windows.h>
 
-#include "Additional.h"
+#include "additional.h"
 #include "api_obfuscation.hpp"
 #include "hide_str.hpp"
 

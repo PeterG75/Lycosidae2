@@ -1,5 +1,5 @@
 #include <iostream>
-#include "Lib.h"
+#include "lib.h"
 #include <synchapi.h>
 
 int main()

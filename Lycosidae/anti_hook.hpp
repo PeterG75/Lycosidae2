@@ -8,9 +8,9 @@
 #include <Shlwapi.h>
 #include <winternl.h>
 
-#include "Additional.h"
+#include "additional.h"
 #include "api_obfuscation.hpp"
-#include "Lycosidae.hpp"
+#include "lycosidae.hpp"
 
 void* __teb()
 {
