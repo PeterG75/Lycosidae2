@@ -1,12 +1,11 @@
 # Lycosidae2
 
-Modern anti-debug
+Anti-debug bypass ScyllaHide 
+DLL version
 
 ## Features
 
-- [x] Import no leak
-
-- [x] Strings no leak
+- [x] Compile time string hashing
 
 ## Third Party
 
