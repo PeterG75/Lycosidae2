@@ -15,60 +15,12 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="t1ha\src\t1ha_selfcheck.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="t1ha\src\t1ha_selfcheck_all.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="t1ha\src\t1ha0.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="t1ha\src\t1ha0_ia32aes_avx.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="t1ha\src\t1ha0_ia32aes_avx2.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="t1ha\src\t1ha0_ia32aes_noavx.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="t1ha\src\t1ha0_selfcheck.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="t1ha\src\t1ha1.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="t1ha\src\t1ha1_selfcheck.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="t1ha\src\t1ha2.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="t1ha\src\t1ha2_selfcheck.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="hide_str.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="t1ha\src\t1ha_bits.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="t1ha\src\t1ha_selfcheck.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="t1ha\src\t1ha0_ia32aes_a.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="t1ha\src\t1ha0_ia32aes_b.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="t1ha\t1ha.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="anti_hook.hpp">

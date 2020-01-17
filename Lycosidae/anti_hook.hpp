@@ -71,6 +71,14 @@ extern "C" NTSYSAPI NTSTATUS NTAPI NtFreeVirtualMemory(
 	IN ULONG FreeType
 );
 
+extern "C" NTSYSAPI NTSTATUS
+NTAPI
+NtFlushInstructionCache(
+	IN HANDLE ProcessHandle,
+	IN OPTIONAL PVOID BaseAddress,
+	IN SIZE_T Length
+);
+
 PVOID Alloc(OPTIONAL PVOID Base, SIZE_T Size, ULONG Protect)
 {
 	auto Status = NtAllocateVirtualMemory(GetCurrentProcess(), &Base, Base ? 12 : 0, &Size,

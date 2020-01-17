@@ -3,6 +3,7 @@
 //#define ANTIHOOK_LOG
 #include "anti_hook.hpp"
 #include "additional.h"
+#include <iostream>
 
 void log()
 {

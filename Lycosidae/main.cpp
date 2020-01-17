@@ -1,3 +1,4 @@
+#include "lib.h"
 #include "anti_hook.hpp"
 #include "lycosidae.hpp"
 
