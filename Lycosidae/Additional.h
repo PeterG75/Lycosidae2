@@ -170,6 +170,8 @@ typedef NTSTATUS (NTAPI *p_nt_query_information_process)(IN HANDLE, IN UINT, OUT
 typedef NTSTATUS (WINAPI *p_nt_query_object)(IN HANDLE, IN UINT, OUT PVOID, IN ULONG, OUT PULONG);
 typedef NTSTATUS (__stdcall *t_nt_query_system_information)(IN ULONG, OUT PVOID, IN ULONG, OUT PULONG);
 
+NTSTATUS(*NtFlushInstructionCache)(IN HANDLE ProcessHandle, IN PVOID BaseAddress, IN ULONG NumberOfBytesToFlush) = nullptr;
+
 static std::size_t min_add_header(size_t a, size_t b)
 {
 	return (a > b) ? a : b;

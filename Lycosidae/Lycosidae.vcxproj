@@ -163,17 +163,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="t1ha\src\t1ha0.c" />
-    <ClCompile Include="t1ha\src\t1ha0_ia32aes_avx.c" />
-    <ClCompile Include="t1ha\src\t1ha0_ia32aes_avx2.c" />
-    <ClCompile Include="t1ha\src\t1ha0_ia32aes_noavx.c" />
-    <ClCompile Include="t1ha\src\t1ha0_selfcheck.c" />
-    <ClCompile Include="t1ha\src\t1ha1.c" />
-    <ClCompile Include="t1ha\src\t1ha1_selfcheck.c" />
-    <ClCompile Include="t1ha\src\t1ha2.c" />
-    <ClCompile Include="t1ha\src\t1ha2_selfcheck.c" />
-    <ClCompile Include="t1ha\src\t1ha_selfcheck.c" />
-    <ClCompile Include="t1ha\src\t1ha_selfcheck_all.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="additional.h" />
@@ -181,11 +170,6 @@
     <ClInclude Include="hide_str.hpp" />
     <ClInclude Include="lib.h" />
     <ClInclude Include="lycosidae.hpp" />
-    <ClInclude Include="t1ha\src\t1ha0_ia32aes_a.h" />
-    <ClInclude Include="t1ha\src\t1ha0_ia32aes_b.h" />
-    <ClInclude Include="t1ha\src\t1ha_bits.h" />
-    <ClInclude Include="t1ha\src\t1ha_selfcheck.h" />
-    <ClInclude Include="t1ha\t1ha.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
