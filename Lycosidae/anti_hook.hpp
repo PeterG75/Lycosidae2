@@ -9,7 +9,6 @@
 #include <winternl.h>
 
 #include "additional.h"
-#include "api_obfuscation.hpp"
 #include "lycosidae.hpp"
 
 void* __teb()
@@ -39,9 +38,42 @@ unsigned int __tid()
 #endif
 }
 
+extern "C" NTSYSAPI NTSTATUS NTAPI NtOpenThread(
+	OUT PHANDLE ThreadHandle,
+	IN ACCESS_MASK DesiredAccess,
+	IN POBJECT_ATTRIBUTES ObjectAttributes,
+	IN CLIENT_ID* ClientId
+);
+
+extern "C" NTSYSAPI NTSTATUS NTAPI NtSuspendThread(
+	IN HANDLE ThreadHandle,
+	OUT OPTIONAL PULONG PreviousSuspendCount
+);
+
+extern "C" NTSYSAPI NTSTATUS NTAPI NtResumeThread(
+	IN HANDLE ThreadHandle,
+	OUT OPTIONAL PULONG SuspendCount
+);
+
+extern "C" NTSYSAPI NTSTATUS NTAPI NtAllocateVirtualMemory(
+	IN HANDLE ProcessHandle,
+	IN OUT PVOID * BaseAddress,
+	IN ULONG ZeroBits,
+	IN OUT PSIZE_T RegionSize,
+	IN ULONG AllocationType,
+	IN ULONG Protect
+);
+
+extern "C" NTSYSAPI NTSTATUS NTAPI NtFreeVirtualMemory(
+	IN HANDLE ProcessHandle,
+	IN PVOID * BaseAddress,
+	IN OUT PSIZE_T RegionSize,
+	IN ULONG FreeType
+);
+
 PVOID Alloc(OPTIONAL PVOID Base, SIZE_T Size, ULONG Protect)
 {
-	auto Status = hash_NtAllocateVirtualMemory(hash_GetCurrentProcess(), &Base, Base ? 12 : 0, &Size,
+	auto Status = NtAllocateVirtualMemory(GetCurrentProcess(), &Base, Base ? 12 : 0, &Size,
 	                                               MEM_RESERVE | MEM_COMMIT, Protect);
 	return NT_SUCCESS(Status) ? Base : nullptr;
 }
@@ -49,7 +81,7 @@ PVOID Alloc(OPTIONAL PVOID Base, SIZE_T Size, ULONG Protect)
 VOID Free(PVOID Base)
 {
 	SIZE_T RegionSize = 0;
-	hash_NtFreeVirtualMemory(hash_GetCurrentProcess(), &Base, &RegionSize, MEM_RELEASE);
+	NtFreeVirtualMemory(GetCurrentProcess(), &Base, &RegionSize, MEM_RELEASE);
 }
 
 BOOLEAN NTAPI EnumProcesses_(
@@ -61,11 +93,11 @@ BOOLEAN NTAPI EnumProcesses_(
 )
 {
 	ULONG Length = 0;
-	auto Status = hash_NtQuerySystemInformation(SystemProcessInformation, nullptr, 0, &Length);
+	auto Status = NtQuerySystemInformation(SystemProcessInformation, nullptr, 0, &Length);
 	if (Status != static_cast<NTSTATUS>(0xC0000004L)) return FALSE;
 	auto Info = static_cast<PWRK_SYSTEM_PROCESS_INFORMATION>(Alloc(nullptr, Length, PAGE_READWRITE));
 	if (!Info) return FALSE;
-	Status = hash_NtQuerySystemInformation(SystemProcessInformation, Info, Length, &Length);
+	Status = NtQuerySystemInformation(SystemProcessInformation, Info, Length, &Length);
 	if (!NT_SUCCESS(Status))
 	{
 		Free(Info);
@@ -91,21 +123,21 @@ BOOLEAN SuspendResumeCallback(PWRK_SYSTEM_PROCESS_INFORMATION Process, PVOID Arg
 	{
 		if ((SIZE_T)Process->Threads[i].ClientId.UniqueThread == static_cast<SIZE_T>(Info->CurrentTid)) continue;
 		HANDLE hThread = nullptr;
-		auto Status = hash_NtOpenThread(&hThread, THREAD_SUSPEND_RESUME, nullptr,
-		                                    (PCLIENT_ID)&Process->Threads[i].ClientId);
+		auto Status = NtOpenThread(&hThread, THREAD_SUSPEND_RESUME, nullptr,
+		                                    (CLIENT_ID*)&Process->Threads[i].ClientId);
 		if (NT_SUCCESS(Status) && hThread)
 		{
 			ULONG SuspendCount = 0;
 			switch (Info->Type)
 			{
 			case srtSuspend:
-				hash_NtSuspendThread(hThread, &SuspendCount);
+				NtSuspendThread(hThread, &SuspendCount);
 				break;
 			case srtResume:
-				hash_NtResumeThread(hThread, &SuspendCount);
+				NtResumeThread(hThread, &SuspendCount);
 				break;
 			}
-			hash_NtClose(hThread);
+			NtClose(hThread);
 		}
 	}
 	return FALSE; // Stop the processes enumeration loop
@@ -131,8 +163,8 @@ BOOLEAN ResumeThreads()
 
 DWORD GetModuleName(const HMODULE hModule, LPSTR szModuleName, const DWORD nSize)
 {
-	auto dwLength = hash_GetModuleFileNameExA(
-		hash_GetCurrentProcess(), // Process handle.
+	auto dwLength = GetModuleFileNameExA(
+		GetCurrentProcess(), // Process handle.
 		hModule, // Module handle.
 		szModuleName, // Pointer to buffer to receive file name.
 		nSize // Size of the buffer in characters.
@@ -151,7 +183,7 @@ DWORD GetModuleName(const HMODULE hModule, LPSTR szModuleName, const DWORD nSize
 DWORD ProtectMemory(const LPVOID lpAddress, const SIZE_T nSize, const DWORD flNewProtect)
 {
 	DWORD flOldProtect = 0;
-	auto bRet = hash_VirtualProtect(
+	auto bRet = VirtualProtect(
 		lpAddress, // Base address to protect.
 		nSize, // Size to protect.
 		flNewProtect, // Desired protection.
@@ -226,7 +258,7 @@ DWORD UnhookModule(const HMODULE hModule)
 		return dwRet;
 	}
 	// Get a handle to the module's file.
-	auto hFile = hash_CreateFileA(
+	auto hFile = CreateFileA(
 		szModuleName, // Module path name.
 		GENERIC_READ, // Desired access.
 		FILE_SHARE_READ, // Share access.
@@ -241,7 +273,7 @@ DWORD UnhookModule(const HMODULE hModule)
 		return ERR_CREATE_FILE_FAILED;
 	}
 	// Create a mapping object for the module.
-	auto hFileMapping = hash_CreateFileMappingW(
+	auto hFileMapping = CreateFileMappingW(
 		hFile, // Handle to file.
 		nullptr, // Mapping attributes.
 		PAGE_READONLY | SEC_IMAGE, // Page protection.
@@ -253,18 +285,18 @@ DWORD UnhookModule(const HMODULE hModule)
 	{
 		// Failed to create mapping handle.
 		// Clean up.
-		hash_CloseHandle(hFile);
+		CloseHandle(hFile);
 		return ERR_CREATE_FILE_MAPPING_FAILED;
 	}
-	else if (hash_GetLastError() == ERROR_ALREADY_EXISTS)
+	else if (GetLastError() == ERROR_ALREADY_EXISTS)
 	{
 		// Error creating mapping handle.
 		// Clean up.
-		hash_CloseHandle(hFile);
+		CloseHandle(hFile);
 		return ERR_CREATE_FILE_MAPPING_ALREADY_EXISTS;
 	}
 	// Map the module.
-	auto lpMapping = hash_MapViewOfFile(
+	auto lpMapping = MapViewOfFile(
 		hFileMapping, // Handle of mapping object.
 		FILE_MAP_READ, // Desired access.
 		0, // File offset high DWORD.
@@ -275,8 +307,8 @@ DWORD UnhookModule(const HMODULE hModule)
 	{
 		// Mapping failed.
 		// Clean up.
-		hash_CloseHandle(hFileMapping);
-		hash_CloseHandle(hFile);
+		CloseHandle(hFileMapping);
+		CloseHandle(hFile);
 		return ERR_MAP_FILE_FAILED;
 	}
 	// printf("Mapping at [%016p]\n", lpMapping);
@@ -286,30 +318,30 @@ DWORD UnhookModule(const HMODULE hModule)
 		hModule, // Handle to the hooked module.
 		lpMapping // Pointer to the newly mapped module.
 	);
-	hash_NtFlushInstructionCache(hash_GetCurrentProcess(), nullptr, 0);
+	NtFlushInstructionCache(GetCurrentProcess(), nullptr, 0);
 	ResumeThreads();
 	if (dwRet)
 	{
 		// Something went wrong!
 		// Clean up.
-		hash_UnmapViewOfFile(lpMapping);
-		hash_CloseHandle(hFileMapping);
-		hash_CloseHandle(hFile);
+		UnmapViewOfFile(lpMapping);
+		CloseHandle(hFileMapping);
+		CloseHandle(hFile);
 		return dwRet;
 	}
 	// Clean up.
-	hash_UnmapViewOfFile(lpMapping);
-	hash_CloseHandle(hFileMapping);
-	hash_CloseHandle(hFile);
+	UnmapViewOfFile(lpMapping);
+	CloseHandle(hFileMapping);
+	CloseHandle(hFile);
 	return ERR_SUCCESS;
 }
 
 HMODULE AddModule(const char* lpLibName)
 {
-	auto hModule = hash_GetModuleHandleA(lpLibName);
+	auto hModule = GetModuleHandleA(lpLibName);
 	if (!hModule)
 	{
-		hModule = hash_LoadLibraryA(lpLibName);
+		hModule = LoadLibraryA(lpLibName);
 	}
 	return hModule;
 }
@@ -321,11 +353,11 @@ DWORD Unhook(const char* lpLibName)
 	// free lib
 	if (hMod)
 	{
-		hash_FreeLibrary(hModule);
+		FreeLibrary(hModule);
 	}
 	else
 	{
-		hash_FreeLibrary(hModule);
+		FreeLibrary(hModule);
 	}
 	return hMod;
 }

@@ -71,9 +71,6 @@
     <ClInclude Include="t1ha\t1ha.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="api_obfuscation.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="anti_hook.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>

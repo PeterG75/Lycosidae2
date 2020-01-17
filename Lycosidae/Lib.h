@@ -1,4 +1,6 @@
 #pragma once
+//#define LYCOSIDAE_LOG
+//#define ANTIHOOK_LOG
 #include "anti_hook.hpp"
 #include "additional.h"
 

@@ -178,7 +178,6 @@
   <ItemGroup>
     <ClInclude Include="additional.h" />
     <ClInclude Include="anti_hook.hpp" />
-    <ClInclude Include="api_obfuscation.hpp" />
     <ClInclude Include="hide_str.hpp" />
     <ClInclude Include="lib.h" />
     <ClInclude Include="lycosidae.hpp" />

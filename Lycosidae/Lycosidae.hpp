@@ -3,7 +3,6 @@
 #include <windows.h>
 
 #include "additional.h"
-#include "api_obfuscation.hpp"
 #include "hide_str.hpp"
 
 #include <winternl.h>
@@ -14,14 +13,14 @@
 BOOL check_remote_debugger_present_api()
 {
 	auto b_is_dbg_present = FALSE;
-	hash_CheckRemoteDebuggerPresent(hash_GetCurrentProcess(), &b_is_dbg_present);
+	CheckRemoteDebuggerPresent(GetCurrentProcess(), &b_is_dbg_present);
 	return b_is_dbg_present;
 }
 
 void nt_close_invalide_handle_helper()
 {
-	const auto nt_close = reinterpret_cast<p_nt_close>(hash_GetProcAddress(
-		hash_GetModuleHandleW(NTDLL), (LPCSTR)PRINT_HIDE_STR("NtClose")));
+	const auto nt_close = reinterpret_cast<p_nt_close>(GetProcAddress(
+		GetModuleHandleW(NTDLL), (LPCSTR)PRINT_HIDE_STR("NtClose")));
 	nt_close(reinterpret_cast<HANDLE>(0x99999999ULL));
 }
 
@@ -41,10 +40,10 @@ BOOL nt_close_invalide_handle()
 BOOL nt_query_information_process_process_debug_flags()
 {
 	const auto process_debug_flags = 0x1f;
-	const auto nt_query_info_process = reinterpret_cast<p_nt_query_information_process>(hash_GetProcAddress(
-		hash_GetModuleHandleW(NTDLL), (LPCSTR)PRINT_HIDE_STR("NtQueryInformationProcess")));
+	const auto nt_query_info_process = reinterpret_cast<p_nt_query_information_process>(GetProcAddress(
+		GetModuleHandleW(NTDLL), (LPCSTR)PRINT_HIDE_STR("NtQueryInformationProcess")));
 	unsigned long no_debug_inherit = 0;
-	const auto status = nt_query_info_process(hash_GetCurrentProcess(), process_debug_flags, &no_debug_inherit,
+	const auto status = nt_query_info_process(GetCurrentProcess(), process_debug_flags, &no_debug_inherit,
 	                                          sizeof(DWORD),
 	                                          nullptr);
 	if (status == 0x00000000 && no_debug_inherit == 0)
@@ -55,11 +54,11 @@ BOOL nt_query_information_process_process_debug_flags()
 BOOL nt_query_information_process_process_debug_object()
 {
 	const auto process_debug_object_handle = 0x1e;
-	const auto nt_query_info_process = reinterpret_cast<p_nt_query_information_process>(hash_GetProcAddress(
-		hash_GetModuleHandleW(NTDLL), (LPCSTR)PRINT_HIDE_STR("NtQueryInformationProcess")));
+	const auto nt_query_info_process = reinterpret_cast<p_nt_query_information_process>(GetProcAddress(
+		GetModuleHandleW(NTDLL), (LPCSTR)PRINT_HIDE_STR("NtQueryInformationProcess")));
 	HANDLE h_debug_object = nullptr;
 	const unsigned long d_process_information_length = sizeof(ULONG) * 2;
-	const auto status = nt_query_info_process(hash_GetCurrentProcess(), process_debug_object_handle, &h_debug_object,
+	const auto status = nt_query_info_process(GetCurrentProcess(), process_debug_object_handle, &h_debug_object,
 	                                          d_process_information_length,
 	                                          nullptr);
 	if (status == 0x00000000 && h_debug_object)
@@ -69,18 +68,18 @@ BOOL nt_query_information_process_process_debug_object()
 
 BOOL nt_query_object_object_all_types_information()
 {
-	const auto nt_query_object = reinterpret_cast<p_nt_query_object>(hash_GetProcAddress(
-		hash_GetModuleHandleW(NTDLL), (LPCSTR)PRINT_HIDE_STR("NtQueryObject")));
+	const auto nt_query_object = reinterpret_cast<p_nt_query_object>(GetProcAddress(
+		GetModuleHandleW(NTDLL), (LPCSTR)PRINT_HIDE_STR("NtQueryObject")));
 	ULONG size;
 	auto status = nt_query_object(nullptr, 3, &size, sizeof(ULONG), &size);
-	const auto p_memory = hash_VirtualAlloc(nullptr, static_cast<size_t>(size), MEM_RESERVE | MEM_COMMIT,
+	const auto p_memory = VirtualAlloc(nullptr, static_cast<size_t>(size), MEM_RESERVE | MEM_COMMIT,
 	                                        PAGE_READWRITE);
 	if (p_memory == nullptr)
 		return FALSE;
 	status = nt_query_object(reinterpret_cast<HANDLE>(-1), 3, p_memory, size, nullptr);
 	if (status != 0x00000000)
 	{
-		hash_VirtualFree(p_memory, 0, MEM_RELEASE);
+		VirtualFree(p_memory, 0, MEM_RELEASE);
 		return FALSE;
 	}
 	const auto p_object_all_info = static_cast<pobject_all_information>(p_memory);
@@ -94,10 +93,10 @@ BOOL nt_query_object_object_all_types_information()
 		{
 			if (pObjectTypeInfo->total_number_of_objects > 0)
 			{
-				hash_VirtualFree(p_memory, 0, MEM_RELEASE);
+				VirtualFree(p_memory, 0, MEM_RELEASE);
 				return TRUE;
 			}
-			hash_VirtualFree(p_memory, 0, MEM_RELEASE);
+			VirtualFree(p_memory, 0, MEM_RELEASE);
 			return FALSE;
 		}
 		p_obj_info_location = reinterpret_cast<unsigned char *>(pObjectTypeInfo->type_name.Buffer);
@@ -107,7 +106,7 @@ BOOL nt_query_object_object_all_types_information()
 			tmp += sizeof(void *);
 		p_obj_info_location = reinterpret_cast<unsigned char *>(tmp);
 	}
-	hash_VirtualFree(p_memory, 0, MEM_RELEASE);
+	VirtualFree(p_memory, 0, MEM_RELEASE);
 	return FALSE;
 }
 
@@ -121,7 +120,7 @@ BOOL process_job()
 	{
 		SecureZeroMemory(job_process_id_list, job_process_struct_size);
 		job_process_id_list->NumberOfProcessIdsInList = 1024;
-		if (hash_QueryInformationJobObject(nullptr, JobObjectBasicProcessIdList, job_process_id_list,
+		if (QueryInformationJobObject(nullptr, JobObjectBasicProcessIdList, job_process_id_list,
 		                                   job_process_struct_size,
 		                                   nullptr))
 		{
@@ -129,13 +128,13 @@ BOOL process_job()
 			for (DWORD i = 0; i < job_process_id_list->NumberOfAssignedProcesses; i++)
 			{
 				const auto process_id = job_process_id_list->ProcessIdList[i];
-				if (process_id == static_cast<ULONG_PTR>(hash_GetCurrentProcessId()))
+				if (process_id == static_cast<ULONG_PTR>(GetCurrentProcessId()))
 				{
 					ok_processes++;
 				}
 				else
 				{
-					const auto h_job_process = hash_OpenProcess(
+					const auto h_job_process = OpenProcess(
 						PROCESS_QUERY_INFORMATION, FALSE, static_cast<DWORD>(process_id));
 					if (h_job_process != nullptr)
 					{
@@ -144,7 +143,7 @@ BOOL process_job()
 						if (process_name)
 						{
 							RtlSecureZeroMemory(process_name, sizeof(TCHAR) * process_name_buffer_size);
-							if (hash_K32GetProcessImageFileNameW(h_job_process, process_name, process_name_buffer_size)
+							if (K32GetProcessImageFileNameW(h_job_process, process_name, process_name_buffer_size)
 								> 0)
 							{
 								std::wstring pnStr(process_name);
@@ -159,7 +158,7 @@ BOOL process_job()
 							}
 							free(process_name);
 						}
-						hash_CloseHandle(h_job_process);
+						CloseHandle(h_job_process);
 					}
 				}
 			}
@@ -172,9 +171,9 @@ BOOL process_job()
 
 void set_handle_informatiom_protected_handle_helper()
 {
-	const auto h_mutex = hash_CreateMutexW(nullptr, FALSE, char_to_wchar((LPCSTR)PRINT_HIDE_STR("923482934823948")));
-	hash_SetHandleInformation(h_mutex, HANDLE_FLAG_PROTECT_FROM_CLOSE, HANDLE_FLAG_PROTECT_FROM_CLOSE);
-	hash_CloseHandle(h_mutex);
+	const auto h_mutex = CreateMutexW(nullptr, FALSE, char_to_wchar((LPCSTR)PRINT_HIDE_STR("923482934823948")));
+	SetHandleInformation(h_mutex, HANDLE_FLAG_PROTECT_FROM_CLOSE, HANDLE_FLAG_PROTECT_FROM_CLOSE);
+	CloseHandle(h_mutex);
 }
 
 BOOL set_handle_informatiom_protected_handle()
@@ -192,8 +191,8 @@ BOOL set_handle_informatiom_protected_handle()
 
 BOOL titan_hide_check()
 {
-	const auto ntdll = hash_GetModuleHandleW(NTDLL);
-	const auto nt_query_system_information = reinterpret_cast<t_nt_query_system_information>(hash_GetProcAddress(
+	const auto ntdll = GetModuleHandleW(NTDLL);
+	const auto nt_query_system_information = reinterpret_cast<t_nt_query_system_information>(GetProcAddress(
 		ntdll, (LPCSTR)PRINT_HIDE_STR("NtQuerySystemInformation")));
 	SYSTEM_CODEINTEGRITY_INFORMATION c_info;
 	c_info.Length = sizeof c_info;
@@ -207,8 +206,8 @@ BOOL NtQuerySystemInformation_SystemKernelDebuggerInformation()
 {
 	const auto SystemKernelDebuggerInformation = 0x23;
 	SYSTEM_KERNEL_DEBUGGER_INFORMATION KdDebuggerInfo;
-	const auto ntdll = hash_GetModuleHandleW(NTDLL);
-	const auto NtQuerySystemInformation = reinterpret_cast<t_nt_query_system_information>(hash_GetProcAddress(
+	const auto ntdll = GetModuleHandleW(NTDLL);
+	const auto NtQuerySystemInformation = reinterpret_cast<t_nt_query_system_information>(GetProcAddress(
 		ntdll, (LPCSTR)PRINT_HIDE_STR("NtQuerySystemInformation")));
 	auto Status = NtQuerySystemInformation(SystemKernelDebuggerInformation, &KdDebuggerInfo,
 	                                       sizeof(SYSTEM_KERNEL_DEBUGGER_INFORMATION), nullptr);
